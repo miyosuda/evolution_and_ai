@@ -1,8 +1,6 @@
 import collections
 
 import numpy as np
-from IPython import embed
-from scipy import integrate, random
 
 from helper import get_default
 from model import get_spike_currents, phi, phi_prime, urb_senn_rhs
@@ -126,10 +124,12 @@ def run(sim,
             does_spike = spiker(curr=curr, dt=dt)
 
         if does_spike:
-            last_spike = {'t': curr['t'], 'y': curr['y']}
+            last_spike = {'t': curr['t'],
+                          'y': curr['y']}
 
         # does the dendrite detect a spike?
-        dendr_spike = spiker_dendr(curr=curr, last_spike=last_spike,
+        dendr_spike = spiker_dendr(curr=curr,
+                                   last_spike=last_spike,
                                    last_spike_dendr=last_spike_dendr)
 
         if dendr_spike:
