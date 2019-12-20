@@ -1,3 +1,4 @@
 *.pyc
 dendritic_prediction/results
+*-checkpoint.ipynb
 

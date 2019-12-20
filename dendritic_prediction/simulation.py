@@ -103,7 +103,7 @@ def run(sim,
     weight_updates = np.zeros(n_syn)
     
     while curr['t'] < t_end - dt / 2:
-        print("t={}, t_end={}".format(curr['t'], t_end)) #..
+        #..print("t={}, t_end={}".format(curr['t'], t_end)) #..
         
         # for each synapse: is there a presynaptic spike at curr['t']?
         curr_pres = np.array([np.sum(np.isclose(pre_sp, curr['t'],
