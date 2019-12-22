@@ -46,14 +46,14 @@ class PeriodicAccumulator:
             return 1
 
     def __init__(self, keys, interval=1, init_size=1024, y_keep=None):
-        self.keys = keys
+        self.keys      = keys
         self.init_size = init_size
-        self.i = interval
-        self.j = 0
-        self.size = init_size
-        self.interval = interval
-        self.t = np.zeros(init_size, np.float32)
-        self.y_keep = y_keep
+        self.i         = interval
+        self.j         = 0
+        self.size      = init_size
+        self.interval  = interval
+        self.t         = np.zeros(init_size, np.float32)
+        self.y_keep    = y_keep
 
     def prepare_arrays(self, n_syn=1):
         self.n_syn = n_syn
@@ -95,23 +95,23 @@ def get_default(params):
     return json.load(open('./default/default_{0}.json'.format(params), 'r'))
 
 
-def get_all_save_keys():
-    """ all variables that can be recorded during a simulation """
-    return ['g_E_Ds',
-            'syn_pots_sums',
-            'y',
-            'spike',
-            'dendr_pred',
-            'h',
-            'PIVs',
-            'pos_PIVs',
-            'neg_PIVs',
-            'dendr_spike',
-            'pre_spikes',
-            'weights',
-            'weight_updates',
-            'deltas',
-            'I_ext']
+#def get_all_save_keys():
+#    """ all variables that can be recorded during a simulation """
+#    return ['g_E_Ds',
+#            'syn_pots_sums',
+#            'y',
+#            'spike',
+#            'dendr_pred',
+#            'h',
+#            'PIVs',
+#            'pos_PIVs',
+#            'neg_PIVs',
+#            'dendr_spike',
+#            'pre_spikes',
+#            'weights',
+#            'weight_updates',
+#            'deltas',
+#            'I_ext']
 
 
 def get_fixed_spiker(spikes):
@@ -141,6 +141,7 @@ def get_dendr_spike_det(thresh, tau_ref=10.0):
     dendritic voltage, together with an associated refractory period
     """
     def dendr_spike_det(curr, last_spike_dendr, **kwargs):
+        # Vがスレッショルドを超えたかつ最後のdendr spikeからの間隔がtau_ref以上なら
         return curr['y'][1] > thresh and (curr['t'] - last_spike_dendr['t'] > tau_ref)
     return dendr_spike_det
 
@@ -199,7 +200,6 @@ def run(sim,
         normalizer = lambda weights: np.where(weights > 0, weights, 0.0)
 
     # set some default parameters
-    voltage_clamp   = kwargs.get('voltage_clamp', False)
     p_backprop      = kwargs.get('p_backprop', 1.0)
     syn_cond_soma = sim.get('syn_cond_soma', {sym: lambda t: 0.0 for sym in ['E', 'I']})
     dendr_predictor = kwargs.get('dendr_predictor', phi)
@@ -222,10 +222,7 @@ def run(sim,
     t_end   = sim['end']
     dt      = sim['dt']
     
-    if voltage_clamp:
-        U0 = kwargs['U_clamp']
-    else:
-        U0 = neuron['E_L']
+    U0 = neuron['E_L']
 
     curr = {
         't': t_start,
@@ -303,7 +300,6 @@ def run(sim,
                 curr_I,
                 neuron,
                 syn_cond_soma,
-                voltage_clamp,
                 p_backprop)
         curr['y'] += dt * urb_senn_rhs(*args)
         curr['t'] += dt
@@ -380,7 +376,7 @@ def fit(p):
         # h=1.0を指定する場合
         accums = run(my_s,
                      get_fixed_spiker(spikes),
-                     get_dendr_spike_det(-50.0),
+                     get_dendr_spike_det(-50.0), # ref期間外かつVが-50.0を超えたらspike
                      accs,
                      seed=seed,
                      neuron=neuron,
@@ -399,12 +395,12 @@ def fit(p):
     #..dump((accums, values), "results/" + p['ident'])
 
 
-deltas = np.linspace(-100.0, 100.0, 101)
+deltas = np.linspace(-100.0, 100.0, 101) # -100ms ~ 100ms
 
 for delta in deltas:
     params = {}
     params["h1"] = False
-    params["delta"] = delta
+    params["delta"] = delta # ms
     
     fit(params)
     print("delta={}".format(delta))

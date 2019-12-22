@@ -26,14 +26,14 @@ class PeriodicAccumulator:
             return 1
 
     def __init__(self, keys, interval=1, init_size=1024, y_keep=None):
-        self.keys = keys
+        self.keys      = keys
         self.init_size = init_size
-        self.i = interval
-        self.j = 0
-        self.size = init_size
-        self.interval = interval
-        self.t = np.zeros(init_size, np.float32)
-        self.y_keep = y_keep
+        self.i         = interval
+        self.j         = 0
+        self.size      = init_size
+        self.interval  = interval
+        self.t         = np.zeros(init_size, np.float32)
+        self.y_keep    = y_keep
 
     def prepare_arrays(self, n_syn=1):
         self.n_syn = n_syn
@@ -69,7 +69,7 @@ class PeriodicAccumulator:
     def add_variable(self, name, val):
         self.res[name] = val
 
-        
+
 def get_default(params):
     import json
     return json.load(open('./default/default_{0}.json'.format(params), 'r'))
@@ -111,6 +111,7 @@ def get_phi_U_learner(neuron, dt, factor=1.0):
         based on an inhomogenuous poisson process with rate phi
     """
     def phi_U_learner(curr, **kwargs):
+        # phi(U) * dtを返す
         return factor * phi(curr['y'][0], neuron) * dt
     return phi_U_learner
 
@@ -128,9 +129,8 @@ def run(sim,
         spiker,
         spiker_dendr,
         accumulators,
-        neuron=None,
-        learn=None,
-        normalizer=None,
+        neuron,
+        learn,
         **kwargs):
     """ this is the main simulation routine.
 
@@ -149,8 +149,6 @@ def run(sim,
                     used if none specified
     learn        -- a dictionary contianing the learning parameters, default_learn is used 
                     if none specified
-    normalizer   -- a function to normalize synaptic weights, e.g. the default normalizer
-                    ensures non-negative weights
     returns:
     a list of accumulators containing simulation results
     """
@@ -158,22 +156,16 @@ def run(sim,
     use_seed = kwargs.get('seed', 0)
     np.random.seed(use_seed)
 
-    if neuron is None:
-        neuron = get_default('neuron')
-
-    if learn is None:
-        learn = get_default('learn')
-
     # restrict to positive weights by default
-    if normalizer is None:
-        normalizer = lambda weights: np.where(weights > 0, weights, 0.0)
+    normalizer = lambda weights: np.where(weights > 0, weights, 0.0)
 
     # set some default parameters
-    voltage_clamp   = kwargs.get('voltage_clamp', False)
-    p_backprop      = kwargs.get('p_backprop', 1.0)
+    p_backprop      = 1.0
     syn_cond_soma = sim.get('syn_cond_soma', {sym: lambda t: 0.0 for sym in ['E', 'I']})
+    # ここはデフォルトのphi()を使っている
     dendr_predictor = kwargs.get('dendr_predictor', phi)
 
+    # これはずっと0
     I_ext = sim.get('I_ext', step_current(np.array([[sim['start'], 0.0]])))
 
     # ensure numpy arrays, for fancy indexing
@@ -192,15 +184,16 @@ def run(sim,
     t_end   = sim['end']
     dt      = sim['dt']
     
-    if voltage_clamp:
-        U0 = kwargs['U_clamp']
-    else:
-        U0 = neuron['E_L']
+    U0 = neuron['E_L']
 
     curr = {
         't': t_start,
         'y': np.concatenate((np.array([U0, neuron['E_L'], neuron['E_L']]),
-                             np.zeros(2 * n_syn)))}
+                             np.zeros(2 * n_syn)))
+        # yは203個になる
+        # 最初の3つは[U, V, V_w_star]
+        # それ以降は[dV_dws, dV_w_star_dws]の繰り返し
+    }
     last_spike = {
         't': float('-inf'),
         'y': curr['y']
@@ -219,25 +212,35 @@ def run(sim,
     weight_updates = np.zeros(n_syn)
     
     while curr['t'] < t_end - dt / 2:
-        print("t={}, t_end={}".format(curr['t'], t_end)) #..
+        # currにはtとyが入っている.
+        # curr['y'] = (203,)
+        
+        #print("t={}, t_end={}".format(curr['t'], t_end)) #..
         
         # for each synapse: is there a presynaptic spike at curr['t']?
+        # 各ニューロンのpre synapseニューロンが発火したかどうか
         curr_pres = np.array([np.sum(np.isclose(pre_sp, curr['t'],
                                                 rtol=1e-10,
                                                 atol=1e-10)) for pre_sp in pre_spikes])
+        # (100,)の 0or1 (2以上の場合もありうる)
 
         g_E_Ds = g_E_Ds + curr_pres * weights
-        g_E_Ds = g_E_Ds - dt * g_E_Ds / neuron['tau_s']
+        g_E_Ds = g_E_Ds - dt * g_E_Ds / neuron['tau_s'] # 時定数で減衰
+        # (100,)
 
+        # 現在時刻tより前のpre synapse発火タイミングでのexponentialを加算する
         syn_pots_sums = np.array(
             [np.sum(np.exp(-(curr['t'] - pre_sp[pre_sp <= curr['t']]) / neuron['tau_s'])) \
              for pre_sp in pre_spikes])
+        # (100,)
 
         # is there a postsynaptic spike at curr['t']?
         if curr['t'] - last_spike['t'] < neuron['tau_ref']:
+            # refractory period中だった場合
             does_spike = False
         else:
             does_spike = spiker(curr=curr, dt=dt)
+            # sineタスクの場合はdoes_spikeがtrueになることが無い
 
         if does_spike:
             last_spike = {'t': curr['t'],
@@ -247,18 +250,25 @@ def run(sim,
         dendr_spike = spiker_dendr(curr=curr,
                                    last_spike=last_spike,
                                    last_spike_dendr=last_spike_dendr)
+        # floatの値, phi(U) * dt
 
         if dendr_spike:
-            last_spike_dendr = {'t': curr['t'], 'y': curr['y']}
+            last_spike_dendr = {'t': curr['t'],
+                                'y': curr['y']}
 
         # dendritic prediction
+        # V_w_starから予測 (sigmoidを使ったphi(V_w_star))
         dendr_pred = dendr_predictor(curr['y'][2], neuron)
+        # 指定されたh or phi_prime(V_w_star) / phi(V_w_star)
         h = kwargs.get('h', phi_prime(curr['y'][2], neuron) / phi(curr['y'][2], neuron))
 
         # update weights
+        # 重みの更新
+        # dV_w_star_dws
+        # (delta_factorは1.0)
         pos_PIVs = neuron['delta_factor'] * float(dendr_spike) / dt * h * curr['y'][4::2]
         neg_PIVs = dendr_pred                                       * h * curr['y'][4::2]
-        PIVs = pos_PIVs - neg_PIVs
+        PIVs = pos_PIVs - neg_PIVs # (phi(U) - phi(V_w_star)) * h * dV_w_star_dws
         deltas += dt * (PIVs - deltas) / learn['tau_delta']
         weight_updates = learn['eta'] * deltas
         weights = normalizer(weights + weight_updates)
@@ -273,7 +283,6 @@ def run(sim,
                 curr_I,
                 neuron,
                 syn_cond_soma,
-                voltage_clamp,
                 p_backprop)
         curr['y'] += dt * urb_senn_rhs(*args)
         curr['t'] += dt
@@ -314,7 +323,7 @@ def task(p):
     learn["eps"] = 1e-1 / n_syn
     learn["eta"] = 1e-3 / n_syn
 
-    # alpha, beta, r_max, g_Sを上書き    
+    # alpha, beta, r_max, g_Sを上書き
     neuron = get_default("neuron")
     neuron["phi"]["alpha"] = p["alpha"]
     neuron["phi"]["beta"]  = p["beta"]
@@ -324,9 +333,9 @@ def task(p):
     epochs    = 4
     l_c       = 6
     eval_c    = 2
-    cycles    = epochs * l_c + (epochs + 1) * eval_c
-    cycle_dur = p["cycle_dur"]
-    t_end     = cycles * cycle_dur
+    cycles    = epochs * l_c + (epochs + 1) * eval_c # 34
+    cycle_dur = p["cycle_dur"] # 100
+    t_end     = cycles * cycle_dur # 3400
 
     def exc_soma_cond(t):
         if t % (cycle_dur * (l_c + eval_c)) < cycle_dur * eval_c:
@@ -341,8 +350,8 @@ def task(p):
         else:
             return 8e-2 * p["g_factor"]
 
-    dt  = 0.05
-    f_r = 0.01  # 10Hz
+    dt  = 0.05 # ms
+    f_r = 0.01 # 10Hz
     t_pts = np.arange(0, t_end / cycles, dt)
 
     poisson_spikes = [t_pts[np.random.rand(t_pts.shape[0]) < f_r * dt] for _ in range(n_syn)]
@@ -356,7 +365,7 @@ def task(p):
         'start'        : 0.0,
         'end'          : t_end,
         'dt'           : dt,
-        'pre_spikes'   : poisson_spikes,
+        'pre_spikes'   : poisson_spikes, # 100個の各ニューロンの発火時刻列
         'syn_cond_soma': {'E': exc_soma_cond,
                           'I': inh_soma_cond},
         'I_ext'        : lambda t: 0.0
@@ -366,8 +375,8 @@ def task(p):
     accs = [PeriodicAccumulator(get_all_save_keys(), interval=40)]
 
     accums = run(my_s,
-                 get_fixed_spiker(np.array([])),
-                 get_phi_U_learner(neuron, dt),
+                 get_fixed_spiker(np.array([])), # spiker
+                 get_phi_U_learner(neuron, dt),  # sipker_dendr
                  accs,
                  neuron=neuron,
                  seed=seed,
