@@ -82,19 +82,9 @@ def task(inputs):
     dump((seed, accums), "results/" + p['ident'])
 
 params = OrderedDict()
-"""
-params["n_syn"]     = [50, 100] # 100
-params["g_factor"]  = [10]
-params["cycle_dur"] = [100]
-params["g_S"]       = [0.0, 0.5] # 0.0
-params["alpha"]     = [-50.0, -55.0] # -55.0
-params["beta"]      = [0.2, 0.25] # 0.25
-params["r_max"]     = [0.25, 0.35] # 0.35
-"""
 
 params["n_syn"]     = [100]
-#params["g_factor"]  = [10]
-params["g_factor"]  = [100] # 100の方がよさそう
+params["g_factor"]  = [100]
 params["cycle_dur"] = [100]
 params["g_S"]       = [0.0]
 params["alpha"]     = [-55.0]
@@ -106,5 +96,4 @@ file_prefix = 'sine_task'
 do(func=task,
    params=params,
    file_prefix=file_prefix,
-   create_notebooks=False,
    withmp=False)

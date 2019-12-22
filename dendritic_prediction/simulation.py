@@ -141,7 +141,7 @@ def run(sim,
 
         # update weights
         pos_PIVs = neuron['delta_factor'] * float(dendr_spike) / dt * h * curr['y'][4::2]
-        neg_PIVs = dendr_pred * h * curr['y'][4::2]
+        neg_PIVs = dendr_pred                                       * h * curr['y'][4::2]
         PIVs = pos_PIVs - neg_PIVs
         deltas += dt * (PIVs - deltas) / learn['tau_delta']
         weight_updates = learn['eta'] * deltas

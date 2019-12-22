@@ -98,25 +98,12 @@ def get_default(params):
     return json.load(open('./default/default_{0}.json'.format(params), 'r'))
 
 
-def do(func, params, file_prefix, create_notebooks=True, **kwargs):
+def do(func, params, file_prefix, **kwargs):
     # paramsは振るパラメータ配列
     
     from parallelization import run_tasks
 
     runs, base_str = construct_params(params, file_prefix)
-    """
-    runs = [
-     {'n_syn': 100,
-      'g_factor': 10,
-      'cycle_dur': 100,
-      'g_S': 0.0,
-      'alpha': -55.0,
-      'beta': 0.25,
-      'r_max': 0.35,
-      'ident': 'sine_task_n_syn_100_g_factor_10_cycle_dur_100_g_S_0.0_alpha_-55.0_beta_0.25_r_max_0.35'}]
-    """
-    #base_str = sine_task_n_syn_{0}_g_factor_{1}_cycle_dur_{2}_g_S_{3}_alpha_{4}_beta_{5}_r_max_{6}
-    #..
     
     run_tasks(params=runs, runTask=func, **kwargs)
 
