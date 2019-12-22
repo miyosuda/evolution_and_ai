@@ -8,6 +8,26 @@ def dump(res, ident):
     cPickle.dump(res, open('{0}.p'.format(ident), 'wb'))
 
 
+class BooleanAccumulator:
+    def __init__(self, keys):
+        self.keys = keys
+        self.res = { key: np.array([]) for key in keys }
+
+    def add(self, curr_t, **vals):
+        for key in self.keys:
+            if vals[key]:
+                self.res[key] = np.append(self.res[key], curr_t)
+
+    def prepare_arrays(self, n_syn):
+        pass
+
+    def cleanup(self):
+        pass
+
+    def add_variable(self, name, val):
+        self.res[name] = val
+
+
 class PeriodicAccumulator:
     def _get_size(self, key):
         if key == 'y':
