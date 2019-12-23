@@ -8,8 +8,6 @@ from model import phi, phi_prime, urb_senn_rhs
 class PeriodicAccumulator:
     def _get_size(self, key):
         if key == 'y':
-            if self.y_keep is not None:
-                return self.y_keep
             return 3 + 2 * self.n_syn
         elif key in ['g_E_Ds',
                      'syn_pots_sums',
@@ -25,7 +23,7 @@ class PeriodicAccumulator:
         else:
             return 1
 
-    def __init__(self, keys, interval=1, init_size=1024, y_keep=None):
+    def __init__(self, keys, interval=1, init_size=1024):
         self.keys      = keys
         self.init_size = init_size
         self.i         = interval
@@ -33,7 +31,6 @@ class PeriodicAccumulator:
         self.size      = init_size
         self.interval  = interval
         self.t         = np.zeros(init_size, np.float32)
-        self.y_keep    = y_keep
 
     def prepare_arrays(self, n_syn=1):
         self.n_syn = n_syn
@@ -46,15 +43,12 @@ class PeriodicAccumulator:
             if self.j == self.size:
                 self.t = np.concatenate((self.t, np.zeros(self.t.shape, np.float32)))
                 for key in self.keys:
-                    self.res[key] = np.vstack(
-                        (self.res[key], np.zeros(self.res[key].shape, np.float32)))
+                    self.res[key] = np.vstack((self.res[key],
+                                               np.zeros(self.res[key].shape, np.float32)))
                 self.size = self.size * 2
 
             for key in self.keys:
-                if key == 'y' and self.y_keep is not None:
-                    self.res[key][self.j, :] = np.atleast_2d(vals[key][:self.y_keep])
-                else:
-                    self.res[key][self.j, :] = np.atleast_2d(vals[key])
+                self.res[key][self.j, :] = np.atleast_2d(vals[key])
             self.t[self.j] = curr_t
 
             self.j += 1

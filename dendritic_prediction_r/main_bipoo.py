@@ -212,6 +212,7 @@ def run(sim,
         pre_spikes[i] = np.array(pre_sp)
 
     n_syn = len(pre_spikes)
+    
     for key in ['eps', 'eta', 'tau_delta']:
         if not isinstance(learn[key], collections.Iterable):
             learn[key] = np.array([learn[key] for _ in range(n_syn)])
@@ -363,7 +364,7 @@ def fit(p):
         'start'     : 0.0,
         'end'       : 300.0,
         'dt'        : 0.05,
-        'pre_spikes': [spikes + p["delta"]],
+        'pre_spikes': [spikes + p["delta"]], # preの発火タイミング
         'I_ext'     : lambda t: 0.0
     }
 
