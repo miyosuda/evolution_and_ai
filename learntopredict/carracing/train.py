@@ -1,18 +1,4 @@
 # training settings
-''' 
-roboschool envs available
-robo_pendulum
-robo_double_pendulum
-robo_reacher
-robo_flagrun
-
-robo_ant
-robo_reacher
-robo_hopper
-robo_walker
-robo_humanoid
-'''
-
 from mpi4py import MPI
 import numpy as np
 import json
@@ -20,7 +6,7 @@ import os
 import subprocess
 import sys
 import config
-from model import make_model, simulate
+from model import Model, simulate
 from es import CMAES, SimpleGA, OpenES, PEPG
 import argparse
 import time
@@ -70,7 +56,7 @@ def initialize_settings(sigma_init=0.1, sigma_decay=0.9999):
     filebase = 'log/' + gamename + '.' + optimizer + '.' + str(
         num_episode) + '.' + str(population)
     game = config.games[gamename]
-    model = make_model(game)
+    model = Model(game)
     num_params = model.param_count
     print("size of model", num_params)
 
@@ -431,6 +417,7 @@ def master():
 
 def main(args):
     global gamename, optimizer, num_episode, eval_steps, num_worker, num_worker_trial, antithetic, seed_start, retrain_mode, cap_time_mode
+    
     gamename = args.gamename
     optimizer = args.optimizer
     num_episode = args.num_episode
@@ -524,11 +511,21 @@ if __name__ == "__main__":
         'set to 0 to disable retraining every eval_steps if results suck.\n only works w/ ses, openes, pepg.'
     )
     parser.add_argument(
-        '-s', '--seed_start', type=int, default=111, help='initial seed')
+        '-s',
+        '--seed_start',
+        type=int,
+        default=111,
+        help='initial seed')
     parser.add_argument(
-        '--sigma_init', type=float, default=0.10, help='sigma_init')
+        '--sigma_init',
+        type=float,
+        default=0.10,
+        help='sigma_init')
     parser.add_argument(
-        '--sigma_decay', type=float, default=0.999, help='sigma_decay')
+        '--sigma_decay',
+        type=float,
+        default=0.999,
+        help='sigma_decay')
 
     args = parser.parse_args()
     if "parent" == mpi_fork(args.num_worker + 1): os.exit()

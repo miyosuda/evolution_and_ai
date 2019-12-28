@@ -10,12 +10,6 @@ from config import games
 
 import json
 
-
-SCREEN_X = 64
-SCREEN_Y = 64
-
-FRAME_STACK = 16
-
 TIME_LIMIT = 1000
 
 def _clip(x, lo=0.0, hi=1.0):
@@ -35,15 +29,18 @@ class VAERacing(CarRacing):
         
         self._internal_counter = 0
         self.z_size = games['vae_racing'].input_size
+        
         self.vae = ConvVAE(batch_size=1,
                            z_size=self.z_size,
                            gpu_mode=False,
                            is_training=False,
                            reuse=True)
         self.vae.load_json('vae/vae_' + str(self.z_size) + '.json')
+        
         self.full_episode = full_episode
         high = np.array([np.inf] * self.z_size)
         self.observation_space = Box(-high, high)
+        
         self._has_rendered = False
         self.real_frame = None
         self.real_z = None
@@ -58,7 +55,6 @@ class VAERacing(CarRacing):
     def _render(self, mode='human', close=False):
         if mode == 'human' or mode == 'rgb_array':
             self._has_rendered = True
-        #return super(VAERacing, self).render(mode=mode, close=close)
         return super(VAERacing, self).render(mode=mode)
 
     def step(self, action):

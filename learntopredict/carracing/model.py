@@ -12,12 +12,10 @@ np.set_printoptions(precision=3, threshold=20, linewidth=200)
 from vae_racing import VAERacing
 
 PEEK_PROB    = 0.3
-SIMPLE_MODE  = True
 
 final_mode   = False
 render_mode  = True
 record_video = False
-MEAN_MODE    = False
 
 
 def passthru(x):
@@ -100,7 +98,7 @@ def _clip(x, lo=0.0, hi=1.0):
     return np.minimum(np.maximum(x, lo), hi)
 
 
-class SimpleWorldModel:
+class WorldModel:
     def __init__(self, obs_size=16, action_size=3, hidden_size=10):
         self.obs_size = obs_size
         self.action_size = action_size
@@ -177,7 +175,7 @@ class SimpleWorldModel:
         return np.random.randn(self.param_count) * stdev
 
 
-class CustomModel:
+class Model:
     ''' learning the best feed forward model for vae_racing '''
 
     def __init__(self, game):
@@ -185,34 +183,24 @@ class CustomModel:
         self.env_name = game.env_name
         self.world_hidden_size = game.layers[0]
         self.agent_hidden_size = game.layers[1]
-        self.rnn_mode = False  # in the future will be useful
         self.experimental_mode = True
         self.peek_prob = PEEK_PROB
-        self.simple_mode = SIMPLE_MODE
-        self.peek_next = 1
-        self.peek = 1
-        self.counter = 0
+        self.peek_next = True
+        self.peek = True
 
         self.input_size = game.input_size  # observation size
         self.output_size = game.output_size  # action size
 
         self.render_mode = False
 
-        self.world_model = SimpleWorldModel(
-            obs_size=self.input_size,
-            action_size=self.output_size,
-            hidden_size=self.world_hidden_size)
+        self.world_model = WorldModel(obs_size=self.input_size,
+                                      action_size=self.output_size,
+                                      hidden_size=self.world_hidden_size)
         
-        agent_input_size = self.input_size + self.world_hidden_size
-        
-        if self.simple_mode:
-            agent_input_size = self.input_size
-            
-        self.agent = Agent(
-            layer_1=self.agent_hidden_size,
-            layer_2=0,
-            input_size=agent_input_size,
-            output_size=self.output_size)
+        self.agent = Agent(layer_1=self.agent_hidden_size,
+                           layer_2=0,
+                           input_size=self.input_size,
+                           output_size=self.output_size)
 
         self.param_count = self.world_model.param_count + self.agent.param_count
         self.prev_action = np.zeros(self.output_size)
@@ -220,9 +208,8 @@ class CustomModel:
 
     def reset(self):
         self.prev_prediction = None
-        self.peek_next = 1
-        self.peek = 1
-        self.counter = 0
+        self.peek_next = True
+        self.peek = True
         self.world_model.reset()
 
     def make_env(self, seed=-1, render_mode=False):
@@ -232,31 +219,20 @@ class CustomModel:
         if (seed >= 0):
             self.env.seed(seed)
 
-    def get_action(self, real_obs, t=0, mean_mode=False):
-        obs = real_obs
-        use_prediction = False
-
-        self.counter += 1  # for tracking frames in case we want to dump out rgb images
-
-        if (self.prev_prediction is not None) and (self.peek_next == 0):
+    def get_action(self, real_obs, t=0):
+        if (self.prev_prediction is not None) and (self.peek_next == False):
             obs = self.prev_prediction
-            use_prediction = True
-
-        if self.simple_mode:
-            agent_obs = obs
         else:
-            prev_hidden = self.world_model.hidden_state.flatten()
-            agent_obs = np.concatenate(
-                [obs.flatten(), prev_hidden])  # use previous hidden state
-        action = self.agent.get_action(agent_obs)
+            obs = real_obs
+
+        action = self.agent.get_action(obs)
 
         self.peek = self.peek_next
-        self.peek_next = 0
+        self.peek_next = False
         if (np.random.rand() < self.peek_prob):
-            self.peek_next = 1
+            self.peek_next = True
 
         self.prev_prediction = self.world_model.predict_next_obs(obs, action)
-        # update hidden state, and predict next frame
         return action
 
     def set_model_params(self, model_params):
@@ -319,9 +295,6 @@ def simulate(model,
 
     for episode in range(num_episode):
         
-        if model.rnn_mode:
-            model.reset()
-
         if model.experimental_mode:
             model.reset()
 
@@ -339,20 +312,15 @@ def simulate(model,
             if render_mode:
                 model.env.render("human")
 
-            if model.rnn_mode:
-                action = model.get_action(obs)
-            else:
-                if MEAN_MODE:
-                    action = model.get_action(obs, t=t, mean_mode=(not train_mode))
-                else:
-                    action = model.get_action(obs, t=t, mean_mode=False)
+            action = model.get_action(obs, t=t)
 
             prev_obs = obs
 
             obs, reward, done, info = model.env.step(action)
 
             if model.experimental_mode:  # augment reward with prob
-                num_glimpse += model.peek
+                if model.peek:
+                    num_glimpse += 1
 
             total_reward += reward
 
@@ -386,7 +354,7 @@ def main():
     if len(sys.argv) > 3:
         the_seed = int(sys.argv[3])
 
-    model = CustomModel(game)
+    model = Model(game)
 
     model.make_env(render_mode=render_mode)
 
