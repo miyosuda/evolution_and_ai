@@ -5,7 +5,9 @@ import json
 import sys
 import config
 
+from record import ImageRecorder
 from vae_racing import VAERacing
+
 
 PEEK_PROB   = 0.3
 render_mode = True
@@ -14,6 +16,7 @@ render_mode = True
 def passthru(x):
     return x
 
+        
 
 class Agent:
     ''' simple feedforward model to act on world model's hidden state '''
@@ -198,6 +201,8 @@ class Model:
         self.prev_action = np.zeros(self.output_size)
         self.prev_prediction = None
 
+        self.recorder = ImageRecorder()
+
     def reset(self):
         self.prev_prediction = None
         self.peek_next = True
@@ -217,6 +222,13 @@ class Model:
         else:
             obs = real_obs
 
+        if self.recorder is not None:
+            self.recorder.record(self.env.real_frame,
+                                 real_obs,
+                                 obs,
+                                 self.peek_next,
+                                 self.env.vae)
+            
         action = self.agent.get_action(obs)
 
         self.peek = self.peek_next
