@@ -197,16 +197,15 @@ def decode_result_packet(packet):
 
 
 def worker(weights, seed, train_mode_int=1, max_len=-1):
-
     train_mode = (train_mode_int == 1)
     model.set_model_params(weights)
-    reward_list, t_list = simulate(
-        model,
-        train_mode=train_mode,
-        render_mode=False,
-        num_episode=num_episode,
-        seed=seed,
-        max_len=max_len)
+    
+    reward_list, t_list = simulate(model,
+                                   train_mode=train_mode,
+                                   render_mode=False,
+                                   num_episode=num_episode,
+                                   seed=seed,
+                                   max_len=max_len)
     if batch_mode == 'min':
         reward = np.min(reward_list)
     else:
@@ -291,7 +290,6 @@ def evaluate_batch(model_params, max_len=-1):
 
 
 def master():
-
     start_time = int(time.time())
     sprint("training", gamename)
     sprint("population", es.popsize)

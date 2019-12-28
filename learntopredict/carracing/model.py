@@ -4,22 +4,15 @@ import random
 import json
 import sys
 import config
-import time
-import os
-from gym.wrappers import Monitor
-np.set_printoptions(precision=3, threshold=20, linewidth=200)
 
 from vae_racing import VAERacing
 
-PEEK_PROB    = 0.3
-
-final_mode   = False
-render_mode  = True
-record_video = False
+PEEK_PROB   = 0.3
+render_mode = True
 
 
 def passthru(x):
-    return x    
+    return x
 
 
 class Agent:
@@ -34,8 +27,8 @@ class Agent:
         self.layer_1 = layer_1
         self.layer_2 = layer_2
         
-        self.input_size  = input_size   # 
-        self.output_size = output_size  # action space
+        self.input_size  = input_size
+        self.output_size = output_size  # action space (3)
         
         if layer_2 == 0:
             self.shapes = [(self.input_size, self.layer_1),
@@ -47,9 +40,8 @@ class Agent:
                            (self.layer_2,    self.output_size)]
                             
 
-        self.activations = [
-            np.tanh, np.tanh, np.tanh
-        ]  # assumption that output is bounded between -1 and 1 (pls chk!)
+        self.activations = [np.tanh, np.tanh, np.tanh]
+        # assumption that output is bounded between -1 and 1
 
         self.weight = []
         self.bias = []
@@ -261,17 +253,6 @@ class Model:
         return np.random.randn(self.param_count) * stdev
 
 
-def evaluate(model):
-    # run 100 times and average score, according to the reles.
-    model.env.seed(0)
-    total_reward = 0.0
-    N = 100
-    for i in range(N):
-        reward, t = simulate(model, train_mode=False, render_mode=False, num_episode=1)
-        total_reward += reward[0]
-    return (total_reward / float(N))
-
-
 def simulate(model,
              train_mode=False,
              render_mode=True,
@@ -350,9 +331,9 @@ def main():
         use_model = True
         filename = sys.argv[2]
 
-    the_seed = 0
+    seed = 0
     if len(sys.argv) > 3:
-        the_seed = int(sys.argv[3])
+        seed = int(sys.argv[3])
 
     model = Model(game)
 
@@ -364,37 +345,12 @@ def main():
         params = model.get_random_model_params(stdev=0.5)
         model.set_model_params(params)
 
-    if final_mode:
-        rewards = []
-
-        for i in range(100):
-            reward, steps_taken = simulate(model,
-                                           train_mode=False,
-                                           render_mode=False,
-                                           num_episode=1,
-                                           seed=the_seed + i)
-            print(i, reward)
-            rewards.append(reward[0])
-        print("seed", the_seed,
-              "average_reward", np.mean(rewards),
-              "standard_deviation", np.std(rewards))
-    else:
-        if record_video:
-            model.env = Monitor(
-                model.env,
-                directory='/tmp/' + gamename,
-                video_callable=lambda episode_id: True,
-                write_upon_reset=True,
-                force=True)
-        for i in range(1):
-            reward, steps_taken = simulate(
-                model,
-                train_mode=False,
-                render_mode=render_mode,
-                num_episode=1,
-                seed=the_seed + i)
-            print("terminal reward", reward, "average steps taken",
-                  np.mean(steps_taken) + 1)
+    reward, steps_taken = simulate(model,
+                                   train_mode=False,
+                                   render_mode=render_mode,
+                                   num_episode=1,
+                                   seed=seed)
+    print("terminal reward", reward, "average steps taken", np.mean(steps_taken) + 1)
 
 
 if __name__ == "__main__":
