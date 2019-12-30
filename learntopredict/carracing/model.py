@@ -264,6 +264,9 @@ class Model:
     def get_random_model_params(self, stdev=0.1):
         return np.random.randn(self.param_count) * stdev
 
+    def close(self):
+        self.recorder.close()
+
 
 def simulate(model,
              train_mode=False,
@@ -275,7 +278,8 @@ def simulate(model,
     reward_list = []
     t_list = []
 
-    max_episode_length = 1000
+    #max_episode_length = 1000
+    max_episode_length = 100
 
     if train_mode and max_len > 0:
         if max_len < max_episode_length:
@@ -326,6 +330,8 @@ def simulate(model,
                 print("percent glimpse", float(num_glimpse) / float(t + 1.0))
         reward_list.append(total_reward)
         t_list.append(t)
+
+        model.close()
 
     return reward_list, t_list
 
