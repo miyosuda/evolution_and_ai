@@ -278,8 +278,7 @@ def simulate(model,
     reward_list = []
     t_list = []
 
-    #max_episode_length = 1000
-    max_episode_length = 100
+    max_episode_length = 1000
 
     if train_mode and max_len > 0:
         if max_len < max_episode_length:
