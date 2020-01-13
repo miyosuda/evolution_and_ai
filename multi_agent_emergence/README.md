@@ -1,35 +1,55 @@
-**Status:** Archive (code is provided as-is, no updates expected)
-
 # Multiagent emergence environments
-Environment generation code for [Emergent Tool Use From Multi-Agent Autocurricula](https://arxiv.org/abs/1909.07528) ([blog](https://openai.com/blog/emergent-tool-use/))
 
-### Installation
-This repository depends on the [mujoco-worldgen](https://github.com/openai/mujoco-worldgen) package. You will need to clone the mujoco-worldgen repository and install it and its dependencies:
+![result](./docs/result0.png)
+
+Most of the code in this repo is based on OpenAI's original impelemtation.
+
+* [Emergent Tool Use From Multi-Agent Autocurricula](https://github.com/openai/multi-agent-emergence-environments)
+* [Worldgen: Randomized MuJoCo environments](https://github.com/openai/mujoco-worldgen)
+
+
+## How to run (for MacOSX)
+
+### Setup and install Mujoco
+
+If you don't have Mujoc license, you need to use Mujoco 30-day trial license.
+
+[https://www.roboti.us/license.html](https://www.roboti.us/license.html)
+
+First download `getos_osx` tool and run it to get
+
 ```
-pip install -r mujoco-worldgen/requirements.txt
-pip install -e mujoco-worldgen/
-pip install -e multi-agent-emergence-environments/
+$ chmod u+x getid_osx
+$ ./getid_osx
+
+Your MuJoCo computer id is:
+
+   OSX_*************************
+
+Please send this string to Roboti LLC to generate activation key.
 ```
 
-This repository has been tested only on Mac OS X and Ubuntu 16.04 with Python 3.6
+Then use this id for the trial license request form. Then you will receive `mjkey.txt` file.
+Download mujoco version 1.5 files (`mjpro150 osx`) from [here](https://www.roboti.us/index.html).
 
-### Use
+Locate both `mkey.txt` file and extracted `mjpro150` folder into `~/.mujoco`
 
-Environment construction works in the following way: You start from the `Base` environment (defined in `mae_envs/envs/base.py`) and then you add environment modules (e.g. `Boxes`, `Ramps`, `RandomWalls`, etc.) and then wrappers on top. You can see examples in the `mae_envs/envs` folder.
+```
+$ ls ~/.mujoco
+mjkey.txt	mjpro150
+```
 
-If you want to construct a new environment, we highly recommend using the above paradigm in order to minimize code duplication. If you need new objects or game dynamics that don't already exist in this codebase, add them in via a new `EnvModule` class or a `gym.Wrapper` class rather than subclassing `Base` (or mujoco-worldgen's `Env` class). In general, `EnvModules` should be used for adding objects or sites to the environment, or otherwise modifying the mujoco simulator; wrappers should be used for everything else (e.g. adding rewards, additional observations, or implementing game mechanics like Lock and Grab).
+## Prepare libraries
 
-The environments defined in this repository are: \
-*Hide and seek* - `mae_envs/envs/hide_and_seek.py` - The Hide and Seek environment described in the paper. This encompasses the *random rooms*, *quadrant* and *food* versions of the game (you can switch between them by changing the arguments given to the `make_env` function in the file) \
-*Box locking* - `mae_envs/envs/box_locking.py` - Encompasses the *Lock and Return* and *Sequential Lock* transfer tasks described in the paper. \
-*Blueprint Construction* - `mae_envs/envs/blueprint_construction.py` \
-*Shelter Construction* - `mae_envs/envs/shelter_construction.py`
+```
+pip3 install -r requirements.txt
+```
 
-You can test out environments by using the `bin/examine` script. Example usage: `bin/examine.py base`. \
-You can also use `bin/examine` to play a saved policy on an environment. There are several environment jsonnets and policies in the `examples` folder. Example usage:
+## How to show result
 
-```bin/examine.py examples/hide_and_seek_quadrant.jsonnet examples/hide_and_seek_quadrant.npz``` 
+You can show trained result like,
 
-Note that to be able to play saved policies, you will need to install a few additional packages. You can do this via
-
-`pip install -r multi-agent-emergence-environments/requirements_ma_policy.txt`
+```
+$ export PYTHONPATH=.
+$ python3 bin/examine.py examples/hide_and_seek_quadrant.jsonnet examples/hide_and_seek_quadrant.npz
+```
