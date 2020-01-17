@@ -1,0 +1,12 @@
+__pycache__
+
+.DS_Store
+._.DS_Store
+
+.ipynb_checkpoints
+result
+
+data/images_brd
+saved*
+
+debug*
