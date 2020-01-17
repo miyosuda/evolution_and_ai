@@ -12,7 +12,7 @@ Refactored version of the original implementation.
 The following command loads an agent trained to drive around the track from pixels (via VAE) with 30 percent peek probability:
 
 ```
-python model.py learn_vae_racing log/learn_vae_racing.cma.4.64.best.json
+$ python3 model.py learn_vae_racing log/learn_vae_racing.cma.4.64.best.json
 ```
 
 ## Results

@@ -13,5 +13,5 @@ Refactored version of the original implementation.
 # run pre-trained models:
 
 ```
-python model.py learn_cartpole log/learn_cartpole.pepg.16.384.best.json
+$ python3 model.py learn_cartpole log/learn_cartpole.pepg.16.384.best.json
 ```
