@@ -18,6 +18,9 @@ def make_model(game):
     model = CustomModel(game)
     return model
 
+def passthru(x):
+    return x
+
 
 class SimpleWorldModel:
     ''' deterministic model for cart-pole swing up task '''
@@ -377,7 +380,7 @@ def simulate(model,
 
 
 def main():
-    assert len(sys.argv) > 1, 'python model.py gamename path_to_mode.json'n
+    assert len(sys.argv) > 1, 'python model.py gamename path_to_mode.json'
 
     gamename = sys.argv[1]
 
@@ -391,7 +394,6 @@ def main():
         print("filename", filename)
 
     the_seed = 0
-    #the_seed = np.random.randint(100000000)
 
     if len(sys.argv) > 3:
         the_seed = int(sys.argv[3])
@@ -412,7 +414,7 @@ def main():
                                    train_mode=False,
                                    render_mode=render_mode,
                                    num_episode=1,
-                                   seed=the_seed+i)
+                                   seed=the_seed)
     print("terminal reward", reward, "average steps taken", np.mean(steps_taken)+1)
 
 
