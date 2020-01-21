@@ -1,7 +1,7 @@
 import numpy as np
 import gym
 
-from scipy.misc import imresize as resize
+from PIL import Image
 from gym.spaces.box import Box
 from gym.envs.box2d.car_racing import CarRacing
 
@@ -17,9 +17,10 @@ def _clip(x, lo=0.0, hi=1.0):
 
 
 def _process_frame(frame):
-    obs = frame[0:84, :, :].astype(np.float) / 255.0
-    obs = resize(obs, (64, 64))
-    obs = ((1.0 - obs) * 255).round().astype(np.uint8)
+    obs = frame[0:84, :, :]
+    # (84, 96, 3), uint8
+    obs = np.array(Image.fromarray(obs).resize((64, 64), resample=2))
+    # (64, 64, 3), uint8
     return obs
 
 
