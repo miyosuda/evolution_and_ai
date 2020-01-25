@@ -12,8 +12,9 @@
 
 #python3 bin/examine.py examples/sequential_lock.jsonnet examples/sequential_lock.npz
 
-
 #python3 bin/examine.py examples/hide_and_seek_full.jsonnet examples/hide_and_seek_policy_phases/a_chasing.npz
 #python3 bin/examine.py examples/hide_and_seek_full.jsonnet examples/hide_and_seek_policy_phases/b_forts.npz
+#python3 bin/examine.py examples/hide_and_seek_full.jsonnet examples/hide_and_seek_policy_phases/c_ramps.npz
+#python3 bin/examine.py examples/hide_and_seek_full.jsonnet examples/hide_and_seek_policy_phases/d_ramp_defense.npz
 python3 bin/examine.py examples/hide_and_seek_full.jsonnet examples/hide_and_seek_policy_phases/e_box_surfing.npz
 
