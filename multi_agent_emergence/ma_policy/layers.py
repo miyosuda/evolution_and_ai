@@ -112,11 +112,13 @@ def residual_sa_block(inp, mask, heads, n_embd,
     with tf.variable_scope(scope, reuse=reuse):
         a = self_attention(inp, mask, heads, n_embd, layer_norm=layer_norm, qk_w=qk_w, v_w=v_w,
                            scope='self_attention', reuse=reuse)
+        # (?, ?, 15, 128)
         post_scale = np.sqrt(post_w / n_embd)
         post_a_mlp = tf.layers.dense(a,
                                      n_embd,
                                      kernel_initializer=tf.random_normal_initializer(stddev=post_scale),
                                      name="mlp1")
+        # ?, ?, 15, 128)
         x = inp + post_a_mlp
         if post_sa_layer_norm:
             with tf.variable_scope('post_a_layernorm'):
